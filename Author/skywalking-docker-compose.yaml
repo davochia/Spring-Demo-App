@@ -1,0 +1,27 @@
+version: '3'
+services:
+  oap:
+    image: apache/skywalking-oap-server:8.5.0-es6
+    container_name: oap
+    restart: always
+    ports:
+      - "11800:11800" # agent grpc port
+      - "12800:12800" # UI HTTP port
+
+  skywaling-ui:
+    image: apache/skywalking-ui
+    container_name: ui
+    depends_on:
+      - oap
+    links:
+      - oap
+    ports:
+      - "8088:8080"
+    environment:
+      - SW_OAP_ADDRESS=oap:12800
+
+  author-server:
+    image: wisekingdavid/author-server:latest
+    container_name: author-server
+    ports:
+      - "9000:9000"

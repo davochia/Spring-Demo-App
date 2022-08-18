@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: author-server
+spec:
+  selector:
+    matchLabels:
+      app: author-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        swck-java-agent-injected: "true"
+        app: author-server
+    spec:
+      # Skywalking start
+      volumes:
+        - name: skywalking-agent
+          emptyDir: { }
+
+      initContainers:
+        - name: agent-container
+          image: apache/skywalking-java-agent:8.7.0-alpine
+          volumeMounts:
+            - name: skywalking-agent
+              mountPath: /agent
+          command: [ "/bin/sh" ]
+          args: [ "-c", "cp -R /skywalking/agent /agent/" ]
+      # Skywalking end
+
+      containers:
+        - name: author-server
+          image: "wisekingdavid/author-server:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: http-author
+              containerPort: 9000
+          #          imagePullSecrets:
+          #            - name: image-secret
+
+          # Skywalking start
+          volumeMounts:
+            - name: skywalking-agent
+              mountPath: /skywalking
+          env:
+            - name: JAVA_TOOL_OPTIONS
+              value: "-javaagent:/skywalking/agent/skywalking-agent.jar"
+            - name: SW_AGENT_NAME
+              value: "author-server"
+            - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES
+              value: "127.0.0.1:11800"
+              # Skywalking end
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 100Mi
+            limits:
+              cpu: 100m
+              memory: 250Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: author-server-service
+spec:
+  #  type: LoadBalancer
+  #  type: NodePort
+  selector:
+    app: author-server
+  ports:
+    - name: "http"
+      protocol: "TCP"
+      port: 9000
+      targetPort: 9000
+#      nodePort: 30005
+#    - name: https
+#      protocol: TCP
+#      port: 443
+#      targetPort: http-author
+#      nodePort: 30005
+
+
+
+---
+#apiVersion: route.openshift.io/v1
+#kind: Route
+#metadata:
+#  name: author-route
+#spec:
+#  tls:
+#    termination: passthrough
+#  host: author-server-service.demo-project.rahtiapp.fi
+##  path: "/api/authors"
+##  port:
+##    targetPort: 9000
+#  to:
+#    kind: Service
+#    name: author-server-service
+
