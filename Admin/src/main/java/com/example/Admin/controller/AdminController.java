@@ -1,5 +1,6 @@
 package com.example.Admin.controller;
 
+import com.example.Admin.dto.AdminDto;
 import com.example.Admin.model.Author;
 import com.example.Admin.model.Book;
 import com.example.Admin.model.Customer;
@@ -11,25 +12,80 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("api/admins")
 public class AdminController {
+
+    private final String Book_API = "http://localhost:9100/api/books/";
+    private final String CUSTOMER_API = "http://localhost:9200/api/customers";
+    private final String AUTHOR_API = "http://localhost:9000/api/authors/";
     
     @Autowired
     private AdminServiceImpl adminService;
 
 
+
+    //    Admin
+    @GetMapping("/getAdmins")
+    @Operation(summary="Get all Admins from system")
+    public ResponseEntity<List<AdminDto>> getAllAdmins() {
+        return new ResponseEntity<>(adminService.getAdmins(), HttpStatus.OK);
+    }
+
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Admin Found",
+                    content = { @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = AdminDto.class)) }),
+            @ApiResponse(responseCode = "400", description = "Invalid id supplied",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "Admin not found",
+                    content = @Content) })
+    @Operation(summary="Get Admin from system find by id")
+    @GetMapping("/admin/{id}")
+    public ResponseEntity<AdminDto> getAdminById(@Parameter(description = "id of Admin to be searched") @PathVariable Integer id) {
+        return new ResponseEntity<>(adminService.findAdminById(id), HttpStatus.OK);
+    }
+
+
+    @PostMapping("/admin")
+    @Operation(summary="Add a new Admin to system")
+    public ResponseEntity<AdminDto> createAdmin(@RequestBody AdminDto adminDto) {
+        return new ResponseEntity<>(adminService.addAdmin(adminDto) , HttpStatus.CREATED);
+    }
+
+
+    @PutMapping("/admin/{id}")
+    @Operation(summary="Edit Admin in the system")
+    public ResponseEntity<AdminDto> editAdmin(@PathVariable Integer id, @RequestBody AdminDto adminDto) {
+        return new ResponseEntity<>(adminService.modifyAdmin(id, adminDto), HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/admin/{id}")
+    @Operation(summary="Delete Admin from system")
+    public ResponseEntity<String> deleteAdmin(@PathVariable Integer id) {
+        adminService.removeAdmin(id);
+        return new ResponseEntity<>("Admin with ID: " + id + " deleted", HttpStatus.NO_CONTENT);
+    }
+
+
 //    Customers
-    @GetMapping
+    @GetMapping("/getCustomers")
     @Operation(summary="Get all Customers from system")
     public ResponseEntity<List<Customer>> getAllCustomers() {
-        return new ResponseEntity<>(adminService.getCustomers(), HttpStatus.OK);
+        String uri = CUSTOMER_API ;
+        RestTemplate restTemplate = new RestTemplate();
+        List<Customer> customers = restTemplate.getForObject(uri, List.class);
+
+        return new ResponseEntity<>(customers, HttpStatus.OK);
     }
 
     @ApiResponses(value = {
@@ -41,45 +97,65 @@ public class AdminController {
             @ApiResponse(responseCode = "404", description = "Customer not found",
                     content = @Content) })
     @Operation(summary="Get Customer from system find by id")
-    @GetMapping("/{id}")
+    @GetMapping("/customers/{id}")
     public ResponseEntity<Customer> getCustomerById(@Parameter(description = "id of Customer to be searched") @PathVariable Integer id) {
-        return new ResponseEntity<>(adminService.findCustomerById(id), HttpStatus.OK);
+        String uri = CUSTOMER_API + "/" + id;
+        RestTemplate restTemplate = new RestTemplate();
+        Customer customers = restTemplate.getForObject(uri, Customer.class);
+        return new ResponseEntity<>(customers, HttpStatus.OK);
     }
 
 
-    @PostMapping
+    @PostMapping("/customer")
     @Operation(summary="Add a new Customer to system")
-    public ResponseEntity<Customer> createCustomer(@RequestBody Customer Customer) {
-        return new ResponseEntity<>(adminService.addCustomer(Customer) , HttpStatus.CREATED);
+    public ResponseEntity<Customer> createCustomer(@RequestBody Customer newCustomer) {
+        String uri = CUSTOMER_API ;;
+        RestTemplate restTemplate = new RestTemplate();
+        Customer customer = restTemplate.postForObject(uri, newCustomer, Customer.class);
+        return new ResponseEntity<>(customer, HttpStatus.CREATED);
     }
 
 
-    @PutMapping("/{id}")
+    @PutMapping("/customer/{id}")
     @Operation(summary="Edit Customer in the system")
     public ResponseEntity<Customer> editCustomer(@PathVariable Integer id, @RequestBody Customer newCustomer) {
-        return new ResponseEntity<>(adminService.modifyCustomer(id, newCustomer), HttpStatus.CREATED);
+        String uri = CUSTOMER_API + "/" + id;;
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpEntity<Customer> request = new HttpEntity<Customer>(newCustomer);
+        return restTemplate.exchange(uri, HttpMethod.PUT, request, Customer.class, HttpStatus.CREATED);
+      //  return new ResponseEntity<>(customer, HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/customer/{id}")
     @Operation(summary="Delete Customer from system")
     public ResponseEntity<String> deleteCustomer(@PathVariable Integer id) {
-        adminService.removeCustomer(id);
+        String uri = CUSTOMER_API + "/" + id;;
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.delete(uri);
         return new ResponseEntity<>("Customer with ID: " + id + " deleted", HttpStatus.NO_CONTENT);
     }
 
 
-//    Books
-@PostMapping
-@Operation(summary="Add a new Book to system")
-public ResponseEntity<Book> createBook(@RequestBody Book newBook) {
-    return new ResponseEntity<>(adminService.addBook(newBook), HttpStatus.CREATED);
-}
+    //    Books
+    @PostMapping("/book")
+    @Operation(summary="Add a new Book to system")
+    public ResponseEntity<Book> createBook(@RequestBody Book newBook) {
+        String uri = Book_API ;;
+        RestTemplate restTemplate = new RestTemplate();
+        Book book = restTemplate.postForObject(uri, newBook, Book.class);
+        return new ResponseEntity<>(book, HttpStatus.CREATED);
+    }
 
 
-    @GetMapping
+    @GetMapping("/books")
     @Operation(summary="Get all Books from system")
     public ResponseEntity<List<Book>> getAllBooks() {
-        return new ResponseEntity<>(adminService.getBooks(), HttpStatus.OK);
+        String uri = Book_API ;
+        RestTemplate restTemplate = new RestTemplate();
+        List<Book> bookList = restTemplate.getForObject(uri, List.class);
+
+        return new ResponseEntity<>(bookList, HttpStatus.OK);
     }
 
 
@@ -92,9 +168,12 @@ public ResponseEntity<Book> createBook(@RequestBody Book newBook) {
             @ApiResponse(responseCode = "404", description = "Book not found",
                     content = @Content) })
     @Operation(summary="Get Book from system find by id")
-    @GetMapping("/{id}")
+    @GetMapping("/book/{id}")
     public ResponseEntity<Book> getBookById(@Parameter(description = "id of Book to be searched") @PathVariable Integer id) {
-        return new ResponseEntity<>(adminService.findBookById(id), HttpStatus.OK);
+        String uri = Book_API + "/" + id;
+        RestTemplate restTemplate = new RestTemplate();
+        Book book = restTemplate.getForObject(uri, Book.class);
+        return new ResponseEntity<>(book, HttpStatus.OK);
     }
 
     @ApiResponses(value = {
@@ -106,9 +185,12 @@ public ResponseEntity<Book> createBook(@RequestBody Book newBook) {
             @ApiResponse(responseCode = "404", description = "Book not found",
                     content = @Content) })
     @Operation(summary="Get Book from system find by title")
-    @GetMapping("/{bookTitle}")
-    public List<Book> findByTitle(@PathVariable String bookTitle) {
-        return adminService.findBookByTitle(bookTitle);
+    @GetMapping("/book/{bookTitle}")
+    public ResponseEntity<List<Book>> findByTitle(@PathVariable String bookTitle) {
+        String uri = Book_API + "/byTitle/" + bookTitle;
+        RestTemplate restTemplate = new RestTemplate();
+        List<Book> books = restTemplate.getForObject(uri, List.class);
+        return new ResponseEntity<>(books, HttpStatus.OK);
     }
 
 
@@ -121,32 +203,45 @@ public ResponseEntity<Book> createBook(@RequestBody Book newBook) {
             @ApiResponse(responseCode = "404", description = "Book not found",
                     content = @Content) })
     @Operation(summary="Get Book from system find by author id")
-    @GetMapping("/author/{authorId}")
-    public List<Book> findByAuthorId(@PathVariable String authorId) {
-        return adminService.findBookByAuthorId(authorId);
+    @GetMapping("/book/{authorId}")
+    public ResponseEntity<List<Book>> findByAuthorId(@PathVariable Integer authorId) {
+        String uri = Book_API + "/byAuthor" + authorId;
+        RestTemplate restTemplate = new RestTemplate();
+        List<Book> books = restTemplate.getForObject(uri, List.class);
+        return new ResponseEntity<>(books, HttpStatus.OK);
     }
 
 
-    @PutMapping("/{id}")
+    @PutMapping("/book/{id}")
     @Operation(summary="Edit book in the system")
     public ResponseEntity<Book> editBook(@PathVariable Integer id, @RequestBody Book newBook) {
-        return new ResponseEntity<>(adminService.modifyBook(id, newBook), HttpStatus.CREATED);
+        String uri = Book_API + "/" + id;;
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpEntity<Book> request = new HttpEntity<Book>(newBook);
+        return restTemplate.exchange(uri, HttpMethod.PUT, request, Book.class, HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/book/{id}")
     @Operation(summary="Delete book from system")
     public ResponseEntity<String> deleteBook(@PathVariable Integer id)  {
-        adminService.removeBook(id);
+        String uri = Book_API + "/" + id;;
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.delete(uri);
         return new ResponseEntity<>("Book with ID: " + id + " deleted", HttpStatus.NO_CONTENT);
     }
-    
-    
-//    Admin
-@GetMapping // Returns all authors
-@Operation(summary="Get all authors from system")
-public ResponseEntity<List<Author>> getAll() {
-    return new ResponseEntity<>(adminService.getAuthors(), HttpStatus.OK);
-}
+
+
+   // Authors
+    @GetMapping("/authors")
+    @Operation(summary="Get all authors from system")
+    public ResponseEntity<List<Author>> getAll() {
+        String uri = AUTHOR_API ;
+        RestTemplate restTemplate = new RestTemplate();
+        List<Author> authorList = restTemplate.getForObject(uri, List.class);
+
+        return new ResponseEntity<>(authorList, HttpStatus.OK);
+    }
 
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Author Found",
@@ -157,29 +252,41 @@ public ResponseEntity<List<Author>> getAll() {
             @ApiResponse(responseCode = "404", description = "Author not found",
                     content = @Content) })
     @Operation(summary="Get author from system find by id")
-    @GetMapping("/{id}")
+    @GetMapping("/author/{id}")
     public ResponseEntity<Author> getAuthorById(@Parameter(description = "id of author to be searched") @PathVariable Integer id) {
-        return new ResponseEntity<>(adminService.findAuthorById(id), HttpStatus.OK);
+        String uri = AUTHOR_API + "/" + id;
+        RestTemplate restTemplate = new RestTemplate();
+        Author author = restTemplate.getForObject(uri, Author.class);
+        return new ResponseEntity<>(author, HttpStatus.OK);
     }
 
 
-    @PostMapping // Create  new author
+    @PostMapping("/authors")
     @Operation(summary="Add a new author to system")
-    public ResponseEntity<Author> createAuthor(@RequestBody Author Author) {
-        return new ResponseEntity<>(adminService.addAuthor(Author) , HttpStatus.CREATED);
+    public ResponseEntity<Author> createAuthor(@RequestBody Author newAuthor) {
+        String uri = AUTHOR_API ;
+        RestTemplate restTemplate = new RestTemplate();
+        Author author = restTemplate.postForObject(uri, newAuthor, Author.class);
+        return new ResponseEntity<>(author, HttpStatus.CREATED);
     }
 
 
-    @PutMapping("/{id}") // Edith author
+    @PutMapping("/author/{id}")
     @Operation(summary="Edit author in the system")
     public ResponseEntity<Author> editAuthor(@PathVariable Integer id, @RequestBody Author newAuthor) {
-        return new ResponseEntity<>(adminService.modifyAuthor(id, newAuthor), HttpStatus.CREATED);
+        String uri = AUTHOR_API + "/" + id;;
+        RestTemplate restTemplate = new RestTemplate();
+
+        HttpEntity<Author> request = new HttpEntity<Author>(newAuthor);
+        return restTemplate.exchange(uri, HttpMethod.PUT, request, Author.class, HttpStatus.CREATED);
     }
 
-    @DeleteMapping("/{id}") // Delete author
+    @DeleteMapping("/author/{id}")
     @Operation(summary="Delete author from system")
     public ResponseEntity<String> deleteAuthor(@PathVariable Integer id) {
-        adminService.removeAuthor(id);
+        String uri = AUTHOR_API + "/" + id;;
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.delete(uri);
         return new ResponseEntity<>("Author with ID: " + id + " deleted", HttpStatus.NO_CONTENT);
     }
 }

@@ -2,6 +2,7 @@ package com.example.Author.controller;
 
 
 import com.example.Author.dto.AuthorDto;
+import com.example.Author.exception.AuthorFoundException;
 import com.example.Author.exception.AuthorNotFoundException;
 import com.example.Author.model.Book;
 import com.example.Author.service.serviceImpl.AuthorServiceImpl;
@@ -11,6 +12,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,9 @@ import java.util.List;
 @RestController
 @RequestMapping("api/authors")
 public class AuthorController {
+
+    final static Logger logger = LoggerFactory.getLogger(AuthorController.class);
+
 
     @Autowired
     private AuthorServiceImpl authorServiceImpl;
@@ -55,20 +61,20 @@ public class AuthorController {
 
     @PostMapping
     @Operation(summary="Add a new author to system")
-    public ResponseEntity<AuthorDto> createAuthor(@RequestBody AuthorDto authorDto) {
+    public ResponseEntity<AuthorDto> createAuthor(@RequestBody AuthorDto authorDto) throws AuthorFoundException {
         return new ResponseEntity<>(authorServiceImpl.addAuthor(authorDto) , HttpStatus.CREATED);
     }
 
 
     @PutMapping("/{id}")
     @Operation(summary="Edit author in the system")
-    public ResponseEntity<AuthorDto> editAuthor(@PathVariable Integer id, @RequestBody AuthorDto newAuthor) {
+    public ResponseEntity<AuthorDto> editAuthor(@PathVariable Integer id, @RequestBody AuthorDto newAuthor) throws AuthorNotFoundException {
         return new ResponseEntity<>(authorServiceImpl.modifyAuthor(id, newAuthor), HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary="Delete author from system")
-    public ResponseEntity<String> deleteAuthor(@PathVariable Integer id) {
+    public ResponseEntity<String> deleteAuthor(@PathVariable Integer id)throws AuthorNotFoundException {
         authorServiceImpl.removeAuthor(id);
         return new ResponseEntity<>("Author with ID: " + id + " deleted", HttpStatus.NO_CONTENT);
     }

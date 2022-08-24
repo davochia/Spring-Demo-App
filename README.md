@@ -1,5 +1,4 @@
-# Spring-Boot-Angular-Demo-App
-Fullstack application for DevOps demo
+# Spring-Boot-Angular-Demo-Project
 
 # Tools and language
 1. Docker
@@ -7,3 +6,5 @@ Fullstack application for DevOps demo
 3. Skywalking
 4. Prometheus 
 5. Grafana
+6. JUnit 
+7. Gatling

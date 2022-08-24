@@ -17,7 +17,7 @@ public class CustomerDto {
     private Date dateOfBirth;
 
 
-    public static Customer getAuthor(CustomerDto customerDto){
+    public static Customer getCustomer(CustomerDto customerDto){
         Customer customer = new Customer();
         customer.setId(customerDto.getId());
         customer.setFirstName(customerDto.getFirstName());

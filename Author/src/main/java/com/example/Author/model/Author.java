@@ -1,18 +1,18 @@
 package com.example.Author.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 import java.util.List;
 
-@Entity(name = "Author")
-@Data
+@ToString
+@Getter
+@Setter
+@EqualsAndHashCode
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Entity
+@Table
 public class Author {
 
     @Id
@@ -31,7 +31,6 @@ public class Author {
 
     @Column(name= "email",unique = true)
     private String email;
-
 
     @OneToMany(mappedBy = "author")
     private List<AuthorBooks> authorBooksList;

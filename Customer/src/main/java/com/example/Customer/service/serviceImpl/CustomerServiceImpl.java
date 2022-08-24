@@ -23,7 +23,7 @@ public class CustomerServiceImpl implements CustomerServiceI {
     @Override
     public CustomerDto addCustomer(CustomerDto customerDto) {
         if (customerDto == null)return null;
-        Customer customer = CustomerDto.getAuthor(customerDto);
+        Customer customer = CustomerDto.getCustomer(customerDto);
         return CustomerDto.getCustomerDto(customerRepository.save(customer));
     }
 

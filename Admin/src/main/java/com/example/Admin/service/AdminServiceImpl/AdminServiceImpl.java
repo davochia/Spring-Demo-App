@@ -1,15 +1,16 @@
 package com.example.Admin.service.AdminServiceImpl;
 
 import com.example.Admin.dto.AdminDto;
-import com.example.Admin.model.Author;
-import com.example.Admin.model.Book;
-import com.example.Admin.model.Customer;
+import com.example.Admin.exception.AdminNotFoundException;
+import com.example.Admin.model.Admin;
 import com.example.Admin.repository.AdminRepository;
 import com.example.Admin.service.AdminServiceI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AdminServiceImpl implements AdminServiceI {
@@ -17,157 +18,6 @@ public class AdminServiceImpl implements AdminServiceI {
     @Autowired
     private AdminRepository adminRepository;
 
-    /**
-     * @param newBook
-     * @return
-     */
-    @Override
-    public Book addBook(Book newBook) {
-        return null;
-    }
-
-    /**
-     * @param id
-     * @return
-     */
-    @Override
-    public Book findBookById(Integer id) {
-        return null;
-    }
-
-    /**
-     * @param bookTitle
-     * @return
-     */
-    @Override
-    public List<Book> findBookByTitle(String bookTitle) {
-        return null;
-    }
-
-    /**
-     * @return
-     */
-    @Override
-    public List<Book> getBooks() {
-        return null;
-    }
-
-    /**
-     * @param id
-     * @param newBook
-     * @return
-     */
-    @Override
-    public Book modifyBook(Integer id, Book newBook) {
-        return null;
-    }
-
-    /**
-     * @param id
-     */
-    @Override
-    public void removeBook(Integer id) {
-
-    }
-
-    /**
-     * @param authorId
-     * @return
-     */
-    @Override
-    public List<Book> findBookByAuthorId(String authorId) {
-        return null;
-    }
-
-    /**
-     * @param customer
-     * @return
-     */
-    @Override
-    public Customer addCustomer(Customer customer) {
-        return null;
-    }
-
-    /**
-     * @param id
-     * @return
-     */
-    @Override
-    public Customer findCustomerById(Integer id) {
-        return null;
-    }
-
-    /**
-     * @return
-     */
-    @Override
-    public List<Customer> getCustomers() {
-        return null;
-    }
-
-    /**
-     * @param id
-     * @param customer
-     * @return
-     */
-    @Override
-    public Customer modifyCustomer(Integer id, Customer customer) {
-        return null;
-    }
-
-    /**
-     * @param id
-     * @return
-     */
-    @Override
-    public Boolean removeCustomer(Integer id) {
-        return null;
-    }
-
-    /**
-     * @param author
-     * @return
-     */
-    @Override
-    public Author addAuthor(Author author) {
-        return null;
-    }
-
-    /**
-     * @param id
-     * @return
-     */
-    @Override
-    public Author findAuthorById(Integer id) {
-        return null;
-    }
-
-    /**
-     * @return
-     */
-    @Override
-    public List<Author> getAuthors() {
-        return null;
-    }
-
-    /**
-     * @param id
-     * @param author
-     * @return
-     */
-    @Override
-    public Author modifyAuthor(Integer id, Author author) {
-        return null;
-    }
-
-    /**
-     * @param id
-     * @return
-     */
-    @Override
-    public Boolean removeAuthor(Integer id) {
-        return null;
-    }
 
     /**
      * @param adminDto
@@ -175,7 +25,9 @@ public class AdminServiceImpl implements AdminServiceI {
      */
     @Override
     public AdminDto addAdmin(AdminDto adminDto) {
-        return null;
+        if (adminDto == null)return null;
+        Admin admin = AdminDto.getAdmin(adminDto);
+        return AdminDto.getAdminDto(adminRepository.save(admin));
     }
 
     /**
@@ -184,7 +36,8 @@ public class AdminServiceImpl implements AdminServiceI {
      */
     @Override
     public AdminDto findAdminById(Integer id) {
-        return null;
+        Optional<Admin> admin = adminRepository.findById(id);
+        return admin.map(AdminDto::getAdminDto).orElseThrow(() -> new AdminNotFoundException(id));
     }
 
     /**
@@ -192,7 +45,11 @@ public class AdminServiceImpl implements AdminServiceI {
      */
     @Override
     public List<AdminDto> getAdmins() {
-        return null;
+        List<Admin> admins =  adminRepository.findAll();
+        List<AdminDto> adminDtos = new ArrayList<AdminDto>();
+        admins.forEach(admin -> adminDtos.add(AdminDto.getAdminDto(admin)));
+
+        return adminDtos;
     }
 
     /**
@@ -202,7 +59,21 @@ public class AdminServiceImpl implements AdminServiceI {
      */
     @Override
     public AdminDto modifyAdmin(Integer id, AdminDto adminDto) {
-        return null;
+        Optional<Admin> optionalAdmin = adminRepository.findById(id);
+
+        if(!optionalAdmin.isPresent())return null;
+
+        Admin admin = optionalAdmin.get();
+
+        if(adminDto == null) return null;
+
+        admin.setFirstName(adminDto.getFirstName());
+        admin.setLastName(adminDto.getLastName());
+        admin.setUsername(adminDto.getUsername());
+        admin.setUsername(adminDto.getUsername());
+        admin.setEmail(adminDto.getEmail());
+
+        return AdminDto.getAdminDto(adminRepository.save(admin));
     }
 
     /**
@@ -211,6 +82,12 @@ public class AdminServiceImpl implements AdminServiceI {
      */
     @Override
     public Boolean removeAdmin(Integer id) {
-        return null;
+        Optional<Admin> optionalAdmin = adminRepository.findById(id);
+        if (!optionalAdmin.isPresent())return false;
+
+        Admin admin = optionalAdmin.get();
+        adminRepository.delete(admin);
+
+        return true;
     }
 }

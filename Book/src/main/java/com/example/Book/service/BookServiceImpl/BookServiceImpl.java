@@ -22,6 +22,8 @@ import java.util.Optional;
 public class BookServiceImpl implements BookServiceI {
 
     final static Logger logger = LoggerFactory.getLogger(BookServiceImpl.class);
+    private final String AUTHOR_API = "http://localhost:9000/api/authors/";
+
 
     @Autowired
     private BookRepository bookRepository;
@@ -31,7 +33,8 @@ public class BookServiceImpl implements BookServiceI {
         if (newBook == null) return null;
 
         Integer authorId = newBook.getAuthorId();
-        String uri = "http://localhost:9000/api/authors/" + authorId;
+
+        String uri = AUTHOR_API + authorId;
         RestTemplate restTemplate = new RestTemplate();
         String data = restTemplate.getForObject(uri, String.class);
 

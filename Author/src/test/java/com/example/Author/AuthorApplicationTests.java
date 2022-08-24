@@ -1,13 +1,17 @@
 package com.example.Author;
 
-import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
+@SpringBootTest()
 class AuthorApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+//	@Autowired
+//	private AuthorApplication application;
+
+//
+//	@Test
+//	public void contextLoads() {
+//		assertThat(application).isNotNull();
+//	}
 
 }
