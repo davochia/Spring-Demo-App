@@ -120,29 +120,7 @@ public class BookServiceImpl implements BookServiceI {
      */
     @Override
     public void borrowBook(Integer bookId, Integer customerId) {
-//                Customer customer = getUserService.getById(userId);
-//        if(customer.getBorrowedBooks().stream()
-//                .anyMatch(book -> book.getId()== bookId)){
-//            throw new IllegalStateException("User already borrowed " +
-//                    "the book");
-//        }
-//
-//        if(customer.getBorrowedBooks().size() >= 3){
-//            throw new IllegalStateException("User already has " +
-//                    "maximum number of books borrowed!");
-//        }
-//
-//        Book book = bookRepository.findById(bookId)
-//                .orElseThrow(() -> new BookNotFoundException(bookId));
-//
-//        if(book.getNumberOfBooks()-1 < 0){
-//            throw new IllegalStateException("There are no available" +
-//                    " books!");
-//        }
-//
-//        book.getUsers().add(customer);
-//        book.setNumberOfBooks(book.getNumberOfBooks()+1);
-//        bookRepository.save(book);
+
 
     }
 

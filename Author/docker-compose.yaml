@@ -2,11 +2,35 @@ version: '3'
 
 
 services:
+
   author-server:
     image: wisekingdavid/author-server:latest
     container_name: author-server
     ports:
       - "9000:9000"
+    depends_on:
+    - PostgreSQL
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://PostgreSQL:5432/author-postgres-db
+      - SPRING_DATASOURCE_USERNAME=author-postgres
+      - SPRING_DATASOURCE_PASSWORD=author-postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+
+
+  PostgreSQL:
+    image: postgres
+    container_name: author-postgres-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=author-postgres
+      - POSTGRES_PASSWORD=author-postgres
+      - POSTGRES_DB=author-postgres-db
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 
   prometheus:

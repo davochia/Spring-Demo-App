@@ -1,6 +1,5 @@
 FROM maven:3-openjdk-8-slim AS maven
 
-
 WORKDIR /app
 COPY pom.xml .
 RUN mvn -e -B dependency:resolve
@@ -17,6 +16,8 @@ COPY --from=maven /app/target/*.jar app.jar
 
 
 ENTRYPOINT [ "java","-jar", "app.jar"]
+EXPOSE 9000
 
-
-
+#FROM prom/prometheus
+#ADD data/prometheus/config/prometheus.yaml /etc/prometheus/
+#EXPOSE 9090
