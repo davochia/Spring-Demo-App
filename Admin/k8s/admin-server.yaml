@@ -1,0 +1,210 @@
+# Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-server
+spec:
+  selector:
+    matchLabels:
+      app: admin-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: admin-server
+    spec:
+      containers:
+
+        - name: admin-server
+          image: "wisekingdavid/admin-server:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: http-admin
+              containerPort: 9300
+
+#          env:
+#            - name: POSTGRES_ADMIN
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: admin-postgres-config
+#                  key:   POSTGRES_USER
+#            - name: POSTGRES_PASSWORD
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: admin-postgres-config
+#                  key:  POSTGRES_PASSWORD
+#            - name: POSTGRES_DB
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: admin-postgres-config
+#                  key: POSTGRES_DB
+#            - name: POSTGRES_HOST
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: hostname-config
+#                  key: postgres_host
+
+#          resources:
+#            requests:
+#              cpu: 100m
+#              memory: 300Mi
+#            limits:
+#              cpu: 500m
+#              memory: 1000Mi
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 9300
+            initialDelaySeconds: 60
+            timeoutSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 9300
+
+
+# App service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-server
+spec:
+  selector:
+    app: admin-server
+  type: ClusterIP
+  ports:
+    - name: http-traffic
+      port: 9300
+      targetPort: http-admin
+
+
+# Custom Resource  Definition
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: admin-server
+#  namespace: <namespace>
+  labels:
+    heritage: Helm
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: admin-server
+  jobLabel: admin-server
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - path: "/actuator/prometheus"
+      port: "http-traffic"
+      scheme: http
+      interval: 15s
+
+
+
+##Postgres
+#---
+#apiVersion: v1
+#kind: ConfigMap
+#metadata:
+#  name: admin-postgres-config
+#  namespace: default
+#data:
+#  POSTGRES_DB: admin-postgres-db
+#  POSTGRES_USER: admin-postgres
+#  POSTGRES_PASSWORD: admin-postgres
+#
+#
+#---
+#apiVersion: v1
+#kind: PersistentVolumeClaim
+#metadata:
+#  name: admin-postgres-pvc-claim
+#spec:
+#  accessModes:
+#    - ReadWriteOnce
+#  resources:
+#    requests:
+#      storage: 1Gi
+#
+#---
+#apiVersion: v1
+#kind: PersistentVolume
+#metadata:
+#  name: postgres-volume
+#  labels:
+#    type: local
+#    app: admin-postgres-db
+#spec:
+#  storageClassName: manual
+#  capacity:
+#    storage: 2Gi
+#  accessModes:
+#    - ReadWriteMany
+#  hostPath:
+#    path: "/data/postgresql"
+#
+#
+#---
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: admin-postgres-db
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: admin-postgres-db
+#  template:
+#    metadata:
+#      labels:
+#        app: admin-postgres-db
+#    spec:
+#      volumes:
+#        - name: admin-postgres-db-storage
+#          persistentVolumeClaim:
+#            claimName: admin-postgres-pvc-claim
+#      containers:
+#        - image: postgres
+#          name: admin-postgres-db
+#          imagePullPolicy: IfNotPresent
+#          env:
+#            - name: POSTGRES_ADMIN-USER
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: admin-postgres-config
+#                  key: POSTGRES_USER
+#            - name: POSTGRES_PASSWORD
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: admin-postgres-config
+#                  key: POSTGRES_PASSWORD
+#            - name: POSTGRES_DB
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: admin-postgres-config
+#                  key: POSTGRES_DB
+#            - name: PGDATA
+#              value: /var/lib/postgresql/data/pgdata
+#          ports:
+#            - containerPort: 5432
+#              name: admin-postgres
+#          volumeMounts:
+#            - name: admin-postgres-db-storage
+#              mountPath: /var/lib/postgresql/data
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: admin-postgres-db
+#spec:
+#  ports:
+#    - port: 5432
+#  selector:
+#    app: admin-postgres
+#

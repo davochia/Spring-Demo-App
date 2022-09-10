@@ -1,0 +1,210 @@
+# Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: author-server
+spec:
+  selector:
+    matchLabels:
+      app: author-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: author-server
+    spec:
+      containers:
+
+        - name: author-server
+          image: "wisekingdavid/author-server:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: http-author
+              containerPort: 9000
+
+#          env:
+#            - name: POSTGRES_AUTHOR
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: author-postgres-config
+#                  key:   POSTGRES_USER
+#            - name: POSTGRES_PASSWORD
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: author-postgres-config
+#                  key:  POSTGRES_PASSWORD
+#            - name: POSTGRES_DB
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: author-postgres-config
+#                  key: POSTGRES_DB
+#            - name: POSTGRES_HOST
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: hostname-config
+#                  key: postgres_host
+
+#          resources:
+#            requests:
+#              cpu: 100m
+#              memory: 300Mi
+#            limits:
+#              cpu: 500m
+#              memory: 1000Mi
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 9000
+            initialDelaySeconds: 60
+            timeoutSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 9000
+
+
+# App service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: author-server
+spec:
+  selector:
+    app: author-server
+  type: ClusterIP
+  ports:
+    - name: http-traffic
+      port: 9000
+      targetPort: http-author
+
+
+# Custom Resource  Definition
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: author-server
+#  namespace: <namespace>
+  labels:
+    heritage: Helm
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: author-server
+  jobLabel: author-server
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - path: "/actuator/prometheus"
+      port: "http-traffic"
+      scheme: http
+      interval: 15s
+
+
+
+##Postgres
+#---
+#apiVersion: v1
+#kind: ConfigMap
+#metadata:
+#  name: author-postgres-config
+#  namespace: default
+#data:
+#  POSTGRES_DB: author-postgres-db
+#  POSTGRES_USER: author-postgres
+#  POSTGRES_PASSWORD: author-postgres
+#
+#
+#---
+#apiVersion: v1
+#kind: PersistentVolumeClaim
+#metadata:
+#  name: author-postgres-pvc-claim
+#spec:
+#  accessModes:
+#    - ReadWriteOnce
+#  resources:
+#    requests:
+#      storage: 1Gi
+#
+#---
+#apiVersion: v1
+#kind: PersistentVolume
+#metadata:
+#  name: postgres-volume
+#  labels:
+#    type: local
+#    app: author-postgres-db
+#spec:
+#  storageClassName: manual
+#  capacity:
+#    storage: 2Gi
+#  accessModes:
+#    - ReadWriteMany
+#  hostPath:
+#    path: "/data/postgresql"
+#
+#
+#---
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: author-postgres-db
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: author-postgres-db
+#  template:
+#    metadata:
+#      labels:
+#        app: author-postgres-db
+#    spec:
+#      volumes:
+#        - name: author-postgres-db-storage
+#          persistentVolumeClaim:
+#            claimName: author-postgres-pvc-claim
+#      containers:
+#        - image: postgres
+#          name: author-postgres-db
+#          imagePullPolicy: IfNotPresent
+#          env:
+#            - name: POSTGRES_AUTHOR-USER
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: author-postgres-config
+#                  key: POSTGRES_USER
+#            - name: POSTGRES_PASSWORD
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: author-postgres-config
+#                  key: POSTGRES_PASSWORD
+#            - name: POSTGRES_DB
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: author-postgres-config
+#                  key: POSTGRES_DB
+#            - name: PGDATA
+#              value: /var/lib/postgresql/data/pgdata
+#          ports:
+#            - containerPort: 5432
+#              name: author-postgres
+#          volumeMounts:
+#            - name: author-postgres-db-storage
+#              mountPath: /var/lib/postgresql/data
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: author-postgres-db
+#spec:
+#  ports:
+#    - port: 5432
+#  selector:
+#    app: author-postgres
+#

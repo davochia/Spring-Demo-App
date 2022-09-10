@@ -1,0 +1,22 @@
+# This is to assume that your Prometheus instance can access this application on localhost:9200
+
+global:
+  scrape_interval:     15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+
+scrape_configs:
+  - job_name: 'customer-server-monitor' # Friendly name for the prometheus
+    metrics_path: '/actuator/prometheus' # Path to scrape the data from the application
+    scrape_interval: 5s
+    static_configs:
+#      - targets: ['SYSTEM_IP_ADDRESS:9200']
+      - targets: ['host.docker.internal:9200']
+        labels:
+          instance: 'customer-server-monitor'
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+
+

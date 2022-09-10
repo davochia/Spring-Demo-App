@@ -1,0 +1,210 @@
+# Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-server
+spec:
+  selector:
+    matchLabels:
+      app: customer-server
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: customer-server
+    spec:
+      containers:
+
+        - name: customer-server
+          image: "wisekingdavid/customer-server:latest"
+          imagePullPolicy: Always
+          ports:
+            - name: http-customer
+              containerPort: 9200
+
+#          env:
+#            - name: POSTGRES_CUSTOMER
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: customer-postgres-config
+#                  key:   POSTGRES_USER
+#            - name: POSTGRES_PASSWORD
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: customer-postgres-config
+#                  key:  POSTGRES_PASSWORD
+#            - name: POSTGRES_DB
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: customer-postgres-config
+#                  key: POSTGRES_DB
+#            - name: POSTGRES_HOST
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: hostname-config
+#                  key: postgres_host
+
+#          resources:
+#            requests:
+#              cpu: 100m
+#              memory: 300Mi
+#            limits:
+#              cpu: 500m
+#              memory: 1000Mi
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 9200
+            initialDelaySeconds: 60
+            timeoutSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 9200
+
+
+# App service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-server
+spec:
+  selector:
+    app: customer-server
+  type: ClusterIP
+  ports:
+    - name: http-traffic
+      port: 9200
+      targetPort: http-customer
+
+
+# Custom Resource  Definition
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: customer-server
+#  namespace: <namespace>
+  labels:
+    heritage: Helm
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: customer-server
+  jobLabel: customer-server
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - path: "/actuator/prometheus"
+      port: "http-traffic"
+      scheme: http
+      interval: 15s
+
+
+
+##Postgres
+#---
+#apiVersion: v1
+#kind: ConfigMap
+#metadata:
+#  name: customer-postgres-config
+#  namespace: default
+#data:
+#  POSTGRES_DB: customer-postgres-db
+#  POSTGRES_USER: customer-postgres
+#  POSTGRES_PASSWORD: customer-postgres
+#
+#
+#---
+#apiVersion: v1
+#kind: PersistentVolumeClaim
+#metadata:
+#  name: customer-postgres-pvc-claim
+#spec:
+#  accessModes:
+#    - ReadWriteOnce
+#  resources:
+#    requests:
+#      storage: 1Gi
+#
+#---
+#apiVersion: v1
+#kind: PersistentVolume
+#metadata:
+#  name: postgres-volume
+#  labels:
+#    type: local
+#    app: customer-postgres-db
+#spec:
+#  storageClassName: manual
+#  capacity:
+#    storage: 2Gi
+#  accessModes:
+#    - ReadWriteMany
+#  hostPath:
+#    path: "/data/postgresql"
+#
+#
+#---
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: customer-postgres-db
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app: customer-postgres-db
+#  template:
+#    metadata:
+#      labels:
+#        app: customer-postgres-db
+#    spec:
+#      volumes:
+#        - name: customer-postgres-db-storage
+#          persistentVolumeClaim:
+#            claimName: customer-postgres-pvc-claim
+#      containers:
+#        - image: postgres
+#          name: customer-postgres-db
+#          imagePullPolicy: IfNotPresent
+#          env:
+#            - name: POSTGRES_CUSTOMER-USER
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: customer-postgres-config
+#                  key: POSTGRES_USER
+#            - name: POSTGRES_PASSWORD
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: customer-postgres-config
+#                  key: POSTGRES_PASSWORD
+#            - name: POSTGRES_DB
+#              valueFrom:
+#                configMapKeyRef:
+#                  name: customer-postgres-config
+#                  key: POSTGRES_DB
+#            - name: PGDATA
+#              value: /var/lib/postgresql/data/pgdata
+#          ports:
+#            - containerPort: 5432
+#              name: customer-postgres
+#          volumeMounts:
+#            - name: customer-postgres-db-storage
+#              mountPath: /var/lib/postgresql/data
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: customer-postgres-db
+#spec:
+#  ports:
+#    - port: 5432
+#  selector:
+#    app: customer-postgres
+#

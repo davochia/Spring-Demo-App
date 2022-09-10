@@ -64,37 +64,14 @@ kind: Service
 metadata:
   name: admin-server-service
 spec:
-  #  type: LoadBalancer
-  #  type: NodePort
   selector:
     app: admin-server
   ports:
     - name: "http"
       protocol: "TCP"
-      port: 9300
-      targetPort: 9300
-#      nodePort: 30005
-#    - name: https
-#      protocol: TCP
-#      port: 443
-#      targetPort: http-admin
-#      nodePort: 30005
+      port: 9000
+      targetPort: http-admin
 
 
 
----
-#apiVersion: route.openshift.io/v1
-#kind: Route
-#metadata:
-#  name: admin-route
-#spec:
-#  tls:
-#    termination: passthrough
-#  host: admin-server-service.demo-project.rahtiapp.fi
-##  path: "/api/admins"
-##  port:
-##    targetPort: 9300
-#  to:
-#    kind: Service
-#    name: admin-server-service
 

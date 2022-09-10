@@ -82,7 +82,27 @@ public class CustomerServiceImpl implements CustomerServiceI {
      */
     @Override
     public void borrowBook(Integer bookId, Integer customerId) {
-
+//        User user = getUserService.getById(userId);
+//        if(user.getBorrowedBooks().stream()
+//                .anyMatch(book -> book.getId()== bookId)){
+//            throw new IllegalStateException("User already borrowed " +
+//                    "the book");
+//        }
+//        if(user.getBorrowedBooks().size() >= 3){
+//            throw new IllegalStateException("User already has " +
+//                    "maximum number of books borrowed!");
+//        }
+//        Book book =
+//                bookRepository.findById(bookId)
+//                        .orElseThrow(() -> new EntityNotFoundException());
+//
+//        if(book.getNumberOfInstances()-1 < 0){
+//            throw new IllegalStateException("There are no available" +
+//                    " books!");
+//        }
+//        book.getUsers().add(user);
+//        book.numberOfInstances(book.getNumberOfInstances()+1);
+//        bookRepository.save(book);
 
     }
 }
